@@ -1,0 +1,162 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+
+class Reservoir {
+private:
+    std::string name;
+    double width;
+    double length;
+    double maxDepth;
+
+public:
+    explicit Reservoir(const std::string& n = "", double w = 0.0, double l = 0.0, double d = 0.0)
+        : name(n), width(w), length(l), maxDepth(d) {}
+
+    ~Reservoir() {}
+
+    Reservoir(const Reservoir& other)
+        : name(other.name), width(other.width), length(other.length), maxDepth(other.maxDepth) {}
+
+    const std::string& getName() const {
+        return name;
+    }
+
+    double getWidth() const {
+        return width;
+    }
+
+    double getLength() const {
+        return length;
+    }
+
+    double getMaxDepth() const {
+        return maxDepth;
+    }
+
+    double calculateVolume() const {
+        return width * length * maxDepth;
+    }
+
+    double calculateSurfaceArea() const {
+        return width * length;
+    }
+
+    bool isSameType(const Reservoir& other) const {
+        return true;
+    }
+
+    bool compareSurfaceArea(const Reservoir& other) const {
+        return calculateSurfaceArea() < other.calculateSurfaceArea();
+    }
+
+    Reservoir copy() const {
+        return *this;
+    }
+
+    void displayInfo() const {
+        std::cout << "Reservoir Name: " << name << std::endl;
+        std::cout << "Width: " << width << " meters, Length: " << length << " meters, Max Depth: " << maxDepth << " meters" << std::endl;
+        std::cout << "Volume: " << calculateVolume() << " cubic meters, Surface Area: " << calculateSurfaceArea() << " square meters" << std::endl;
+    }
+};
+
+class ReservoirManager {
+private:
+    std::vector<Reservoir> reservoirs;
+
+public:
+    void addReservoir(const Reservoir& reservoir) {
+        reservoirs.push_back(reservoir);
+    }
+
+    void removeReservoir(int index) {
+        if (index >= 0 && index < reservoirs.size()) {
+            reservoirs.erase(reservoirs.begin() + index);
+        }
+    }
+
+    void displayAllReservoirs() const {
+        for (const auto& reservoir : reservoirs) {
+            reservoir.displayInfo();
+            std::cout << "-----------------------------" << std::endl;
+        }
+    }
+
+    void saveToTextFile(const std::string& filename) const {
+        std::ofstream file(filename);
+        if (file.is_open()) {
+            for (const auto& reservoir : reservoirs) {
+                file << reservoir.getName() << " " << reservoir.getWidth() << " " << reservoir.getLength() << " " << reservoir.getMaxDepth() << std::endl;
+            }
+            file.close();
+        }
+        else {
+            std::cerr << "Error: Unable to open file for writing." << std::endl;
+        }
+    }
+
+    void loadFromTextFile(const std::string& filename) {
+        std::ifstream file(filename);
+        if (file.is_open()) {
+            reservoirs.clear();
+            std::string name;
+            double width, length, maxDepth;
+            while (file >> name >> width >> length >> maxDepth) {
+                addReservoir(Reservoir(name, width, length, maxDepth));
+            }
+            file.close();
+        }
+        else {
+            std::cerr << "Error: Unable to open file for reading." << std::endl;
+        }
+    }
+
+    void saveToBinaryFile(const std::string& filename) const {
+        std::ofstream file(filename, std::ios::binary);
+        if (file.is_open()) {
+            for (const auto& reservoir : reservoirs) {
+                file.write(reinterpret_cast<const char*>(&reservoir), sizeof(Reservoir));
+            }
+            file.close();
+        }
+        else {
+            std::cerr << "Error: Unable to open file for writing." << std::endl;
+        }
+    }
+
+    void loadFromBinaryFile(const std::string& filename) {
+        std::ifstream file(filename, std::ios::binary);
+        if (file.is_open()) {
+            reservoirs.clear();
+            Reservoir reservoir;
+            while (file.read(reinterpret_cast<char*>(&reservoir), sizeof(Reservoir))) {
+                addReservoir(reservoir);
+            }
+            file.close();
+        }
+        else {
+            std::cerr << "Error: Unable to open file for reading." << std::endl;
+        }
+    }
+};
+
+int main() {
+    ReservoirManager manager;
+
+    manager.addReservoir(Reservoir("Lake", 100.0, 150.0, 10.0));
+    manager.addReservoir(Reservoir("Pond", 20.0, 30.0, 5.0));
+    manager.addReservoir(Reservoir("Sea", 500.0, 800.0, 50.0));
+
+    std::cout << "All Reservoirs:" << std::endl;
+    manager.displayAllReservoirs();
+
+    manager.saveToTextFile("reservoirs.txt");
+    manager.loadFromTextFile("reservoirs.txt");
+
+    manager.saveToBinaryFile("reservoirs.dat");
+    manager.loadFromBinaryFile("reservoirs.dat");
+
+    return 0;
+}
